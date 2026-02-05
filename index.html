@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Virtual Care Package 🐱</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Dancing+Script:wght@500;600;700&family=Fredoka:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        bg: {
+                            start: '#FFF0F3', // Soft pinkish white
+                            end: '#FFF5E6',   // Soft cream
+                        },
+                        pastel: {
+                            pink: '#FFC4C4',
+                            peach: '#FFD6A5',
+                            yellow: '#FDFFB6',
+                            green: '#CAFFBF',
+                            teal: '#9BF6FF',
+                            blue: '#A0C4FF',
+                            purple: '#BDB2FF',
+                            orange: '#FFADAD',
+                            lavender: '#E7C6FF',
+                        },
+                        cat: {
+                            orange: '#FFAB91',      // Soft orange body
+                            darkOrange: '#E64A19', // Darker orange lines/details
+                            cream: '#FFF3E0',      // Muzzle/Belly
+                            white: '#FFFFFF',
+                            line: '#3E2723'        // Dark Brown/Black for main outlines
+                        },
+                        text: {
+                            primary: '#5D4037',
+                            secondary: '#8D6E63',
+                        }
+                    },
+                    fontFamily: {
+                        'body': ['Quicksand', 'sans-serif'],
+                        'title': ['Dancing Script', 'cursive'],
+                        'cute': ['Fredoka', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'soft': '0 10px 25px -5px rgba(141, 110, 99, 0.15)',
+                        'inner-soft': 'inset 0 2px 10px rgba(141, 110, 99, 0.05)',
+                        'button': '0 8px 0 rgba(0,0,0,0.1)',
+                        'button-pressed': '0 4px 0 rgba(0,0,0,0.1)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background: linear-gradient(180deg, #FFF0F3 0%, #FFF5E6 100%);
+            color: #5D4037;
+            min-height: 100vh;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Animations */
+        .float {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .float-delay-1 {
+            animation-delay: 1s;
+        }
+
+        .float-delay-2 {
+            animation-delay: 2s;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-15px);
+            }
+        }
+
+        .bounce-soft {
+            animation: bounceSoft 2s infinite;
+        }
+
+        @keyframes bounceSoft {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-5px);
+            }
+        }
+
+        .slide-up {
+            animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* Button Press Effect */
+        .btn-press {
+            transition: all 0.1s;
+            transform: translateY(0);
+        }
+
+        .btn-press:active {
+            transform: translateY(4px);
+            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.1) !important;
+        }
+
+        /* Cloud Shape Divider */
+        .cloud-divider {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: auto;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Scrollbar hide */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // ==================== ICONS (Anime Sticker Style) ====================
+
+        // Complex Eye Component for that "Sparkly Anime" look
+        const AnimeEye = ({ cx, cy, rx, ry, closed, sad }) => {
+            if (closed) {
+                return <path d={`M${cx - rx},${cy} Q${cx},${cy + ry} ${cx + rx},${cy}`} fill="none" stroke="#3E2723" strokeWidth="4" strokeLinecap="round" />;
+            }
+            if (sad) {
+                // Crying eye shape
+                return (
+                    <g>
+                        <path d={`M${cx - rx},${cy + ry / 3} Q${cx},${cy - ry} ${cx + rx},${cy + ry / 3} Z`} fill="#3E2723" />
+                        {/* Highlights */}
+                        <circle cx={cx - (rx / 2)} cy={cy - (ry / 3)} r={rx / 3} fill="white" />
+                        <circle cx={cx + (rx / 3)} cy={cy} r={rx / 5} fill="white" opacity="0.8" />
+                        {/* Tears */}
+                        <path d={`M${cx - rx},${cy + ry / 2} Q${cx - rx - 5},${cy + ry + 10} ${cx},${cy + ry + 15} Q${cx + rx + 5},${cy + ry + 10} ${cx + rx},${cy + ry / 2} Z`} fill="#B3E5FC" stroke="#81D4FA" strokeWidth="1" />
+                    </g>
+                );
+            }
+
+            // Normal Sparkly Eye
+            return (
+                <g>
+                    {/* Main Dark Oval */}
+                    <ellipse cx={cx} cy={cy} rx={rx} ry={ry} fill="#3E2723" />
+                    {/* Bottom Shine (Iris hint) */}
+                    <path d={`M${cx - rx + 2},${cy + 2} Q${cx},${cy + ry - 2} ${cx + rx - 2},${cy + 2} Z`} fill="#8D6E63" opacity="0.5" />
+                    {/* Big Top Highlight */}
+                    <ellipse cx={cx - (rx / 2.5)} cy={cy - (ry / 2.5)} rx={rx / 2.5} ry={ry / 3} fill="white" />
+                    {/* Small Bottom Highlight */}
+                    <circle cx={cx + (rx / 2)} cy={cy + (ry / 3)} r={rx / 5} fill="white" opacity="0.7" />
+                </g>
+            );
+        };
+
+        const StickerCatBase = ({ children }) => (
+            <svg viewBox="0 0 200 200" className="w-full h-full drop-shadow-lg overflow-visible">
+                <defs>
+                    <filter id="sticker-border" x="-20%" y="-20%" width="140%" height="140%">
+                        <feMorphology operator="dilate" radius="4" in="SourceAlpha" result="thickStrok" />
+                        <feFlood floodColor="white" result="whiteColor" />
+                        <feComposite in="whiteColor" in2="thickStrok" operator="in" result="whiteStroke" />
+                        <feMerge>
+                            <feMergeNode in="whiteStroke" />
+                            <feMergeNode in="SourceGraphic" />
+                        </feMerge>
+                    </filter>
+                    <filter id="soft-shadow">
+                        <feDropShadow dx="0" dy="4" stdDeviation="3" floodColor="#000" floodOpacity="0.1" />
+                    </filter>
+                </defs>
+
+                {/* 
+                   Using a group with the 'sticker-border' filter creates the white outline 
+                   around EVERYTHING inside the group automatically.
+                */}
+                <g filter="url(#sticker-border)">
+                    <g filter="url(#soft-shadow)">
+
+                        {/* TAIL (Position depends on pose, but default here) */}
+                        <path d="M160,150 Q180,140 180,120 Q180,100 160,110" fill="#FFAB91" stroke="#3E2723" strokeWidth="3" />
+
+                        {/* BODY (Chubby sitting blob) */}
+                        <path d="M60,170 Q40,170 40,140 Q40,110 55,100 L55,100 Q45,60 70,50 Q100,35 130,50 Q155,60 145,100 L145,100 Q160,110 160,140 Q160,170 140,170 Z"
+                            fill="#FFAB91" stroke="#3E2723" strokeWidth="3" />
+
+                        {/* BELLY Patch */}
+                        <path d="M70,165 Q100,175 130,165 Q145,130 130,115 Q100,105 70,115 Q55,130 70,165" fill="#FFF3E0" />
+
+                        {/* HEAD (Rounded Rectangle-ish) */}
+                        <path d="M50,90 Q50,40 100,40 Q150,40 150,90 Q150,135 100,135 Q50,135 50,90" fill="#FFAB91" stroke="#3E2723" strokeWidth="3" />
+
+                        {/* EARS */}
+                        <path d="M55,50 L40,25 Q55,20 70,35" fill="#FFAB91" stroke="#3E2723" strokeWidth="3" strokeLinejoin="round" />
+                        <path d="M145,50 L160,25 Q145,20 130,35" fill="#FFAB91" stroke="#3E2723" strokeWidth="3" strokeLinejoin="round" />
+                        {/* Inner Ears */}
+                        <path d="M55,45 L45,30 Q55,28 65,38" fill="#F48FB1" />
+                        <path d="M145,45 L155,30 Q145,28 135,38" fill="#F48FB1" />
+
+                        {/* FACE MARKINGS (Head Stripe) */}
+                        <path d="M90,42 L100,55 L110,42" fill="#E64A19" />
+
+                        {/* MUZZLE Area */}
+                        <ellipse cx="100" cy="105" rx="25" ry="18" fill="#FFF3E0" />
+
+                        {/* CHEEKS */}
+                        <circle cx="65" cy="105" r="8" fill="#F48FB1" opacity="0.4" />
+                        <circle cx="135" cy="105" r="8" fill="#F48FB1" opacity="0.4" />
+
+                        {/* PAWS (Feet) */}
+                        <ellipse cx="70" cy="165" rx="12" ry="10" fill="#FFFFFF" stroke="#3E2723" strokeWidth="3" />
+                        <circle cx="70" cy="168" r="2" fill="#F48FB1" />
+                        <circle cx="65" cy="164" r="2" fill="#F48FB1" />
+                        <circle cx="75" cy="164" r="2" fill="#F48FB1" />
+
+                        <ellipse cx="130" cy="165" rx="12" ry="10" fill="#FFFFFF" stroke="#3E2723" strokeWidth="3" />
+                        <circle cx="130" cy="168" r="2" fill="#F48FB1" />
+                        <circle cx="125" cy="164" r="2" fill="#F48FB1" />
+                        <circle cx="135" cy="164" r="2" fill="#F48FB1" />
+
+                        {/* HANDS (Front Paws) - Default Position, overwrite in children if needed */}
+                        <ellipse cx="85" cy="135" rx="10" ry="12" fill="#FFFFFF" stroke="#3E2723" strokeWidth="3" />
+                        <ellipse cx="115" cy="135" rx="10" ry="12" fill="#FFFFFF" stroke="#3E2723" strokeWidth="3" />
+
+                        {/* Child Content (Expression, Props) */}
+                        {children}
+                    </g>
+                </g>
+            </svg>
+        );
+
+        const Icons = {
+            Main: () => (
+                <StickerCatBase>
+                    <AnimeEye cx={80} cy={95} rx={10} ry={12} />
+                    <AnimeEye cx={120} cy={95} rx={10} ry={12} />
+                    <path d="M95,108 Q100,112 105,108" fill="none" stroke="#3E2723" strokeWidth="2" strokeLinecap="round" />
+                    <polygon points="98,105 102,105 100,108" fill="#F48FB1" />
+                </StickerCatBase>
+            ),
+            Sad: () => (
+                <StickerCatBase>
+                    {/* Sad Eyes */}
+                    <AnimeEye cx={80} cy={95} rx={14} ry={12} sad />
+                    <AnimeEye cx={120} cy={95} rx={14} ry={12} sad />
+
+                    {/* Quivering Mouth */}
+                    <path d="M95,112 Q100,108 105,112" fill="none" stroke="#3E2723" strokeWidth="2" strokeLinecap="round" />
+
+                    {/* Tissue held in paws */}
+                    <path d="M90,130 L110,130 L115,150 L85,150 Z" fill="#FFFFFF" stroke="#E0E0E0" strokeWidth="2" />
+
+                    {/* Paws holding tissue */}
+                    <ellipse cx="90" cy="135" rx="10" ry="12" fill="#FFFFFF" stroke="#3E2723" strokeWidth="3" />
+                    <ellipse cx="110" cy="135" rx="10" ry="12" fill="#FFFFFF" stroke="#3E2723" strokeWidth="3" />
+                </StickerCatBase>
+            ),
+            Tired: () => (
+                <StickerCatBase>
+                    {/* Closed Sleepy Eyes */}
+                    <AnimeEye cx={80} cy={95} rx={12} ry={4} closed />
+                    <AnimeEye cx={120} cy={95} rx={12} ry={4} closed />
+
+                    {/* Yawning Mouth */}
+                    <circle cx="100" cy="110" r="6" fill="#3E2723" opacity="0.3" />
+
+                    {/* Zzz Text */}
+                    <text x="140" y="60" fontFamily="Fredoka" fontSize="40" fill="#3E2723" className="float">Zzz</text>
+                </StickerCatBase>
+            ),
+            Miss: () => (
+                <StickerCatBase>
+                    {/* Big Sparkly Eyes looking up */}
+                    <AnimeEye cx={80} cy={90} rx={12} ry={14} />
+                    <AnimeEye cx={120} cy={90} rx={12} ry={14} />
+
+                    {/* Holding Heart */}
+                    <path d="M100,120 Q120,110 130,130 Q100,165 100,165 Q70,130 80,110 Q90,110 100,120" fill="#FF5252" stroke="#3E2723" strokeWidth="2" />
+
+                    {/* Paws hugging heart */}
+                    <ellipse cx="85" cy="135" rx="10" ry="12" fill="#FFFFFF" stroke="#3E2723" strokeWidth="3" />
+                    <ellipse cx="115" cy="135" rx="10" ry="12" fill="#FFFFFF" stroke="#3E2723" strokeWidth="3" />
+
+                    {/* Smile */}
+                    <path d="M95,105 Q100,110 105,105" fill="none" stroke="#3E2723" strokeWidth="2" strokeLinecap="round" />
+                </StickerCatBase>
+            ),
+            Bored: () => (
+                <StickerCatBase>
+                    {/* Bored half-lidded eyes */}
+                    <path d="M70,90 H90" stroke="#3E2723" strokeWidth="3" />
+                    <path d="M70,90 A10,10 0 0 0 90,90" fill="#FFFFFF" stroke="#3E2723" strokeWidth="3" />
+                    <circle cx="80" cy="95" r="3" fill="#3E2723" />
+
+                    <path d="M110,90 H130" stroke="#3E2723" strokeWidth="3" />
+                    <path d="M110,90 A10,10 0 0 0 130,90" fill="#FFFFFF" stroke="#3E2723" strokeWidth="3" />
+                    <circle cx="120" cy="95" r="3" fill="#3E2723" />
+
+                    {/* Flat mouth */}
+                    <line x1="95" y1="110" x2="105" y2="110" stroke="#3E2723" strokeWidth="2" />
+
+                    {/* Yarn Ball */}
+                    <circle cx="150" cy="150" r="20" fill="#9FA8DA" stroke="#3E2723" strokeWidth="2" />
+                    <path d="M140,140 Q150,160 160,140" fill="none" stroke="#7986CB" strokeWidth="2" />
+                </StickerCatBase>
+            ),
+            Smile: () => (
+                <StickerCatBase>
+                    {/* Happy Squint Eyes */}
+                    <path d="M70,95 Q80,85 90,95" fill="none" stroke="#3E2723" strokeWidth="3" strokeLinecap="round" />
+                    <path d="M110,95 Q120,85 130,95" fill="none" stroke="#3E2723" strokeWidth="3" strokeLinecap="round" />
+
+                    {/* Big Open Smile */}
+                    <path d="M85,105 Q100,125 115,105" fill="#3E2723" opacity="0.8" />
+                    <path d="M90,108 Q100,120 110,108" fill="#F48FB1" />
+
+                    {/* Arms up! */}
+                    <ellipse cx="60" cy="120" rx="10" ry="12" fill="#FFFFFF" stroke="#3E2723" strokeWidth="3" transform="rotate(-20 60 120)" />
+                    <ellipse cx="140" cy="120" rx="10" ry="12" fill="#FFFFFF" stroke="#3E2723" strokeWidth="3" transform="rotate(20 140 120)" />
+                </StickerCatBase>
+            ),
+            Anxious: () => (
+                <StickerCatBase>
+                    {/* Wide Staring Eyes */}
+                    <circle cx="80" cy="95" r="5" fill="#3E2723" />
+                    <circle cx="120" cy="95" r="5" fill="#3E2723" />
+                    {/* Sweat Drop */}
+                    <path d="M60,80 Q60,95 65,90" fill="#4FC3F7" stroke="#0288D1" strokeWidth="1" />
+                    {/* Wobbly Mouth */}
+                    <path d="M95,110 Q98,105 100,110 T105,110" fill="none" stroke="#3E2723" strokeWidth="2" />
+                    {/* Hiding behind paws */}
+                    <ellipse cx="90" cy="115" rx="10" ry="12" fill="#FFFFFF" stroke="#3E2723" strokeWidth="3" />
+                    <ellipse cx="110" cy="115" rx="10" ry="12" fill="#FFFFFF" stroke="#3E2723" strokeWidth="3" />
+                </StickerCatBase>
+            ),
+            Angry: () => (
+                <StickerCatBase>
+                    {/* Angry Eyes */}
+                    <path d="M70,85 L90,95" stroke="#3E2723" strokeWidth="3" />
+                    <path d="M130,85 L110,95" stroke="#3E2723" strokeWidth="3" />
+                    <circle cx="80" cy="100" r="4" fill="#3E2723" />
+                    <circle cx="120" cy="100" r="4" fill="#3E2723" />
+
+                    {/* Frown */}
+                    <path d="M95,115 Q100,110 105,115" fill="none" stroke="#3E2723" strokeWidth="2" />
+
+                    {/* Steam */}
+                    <path d="M60,60 Q55,50 65,40" fill="none" stroke="#FF5252" strokeWidth="3" />
+                    <path d="M140,60 Q145,50 135,40" fill="none" stroke="#FF5252" strokeWidth="3" />
+                </StickerCatBase>
+            ),
+            Sick: () => (
+                <StickerCatBase>
+                    {/* X eyes */}
+                    <path d="M75,90 L85,100" stroke="#3E2723" strokeWidth="3" />
+                    <path d="M75,100 L85,90" stroke="#3E2723" strokeWidth="3" />
+                    <path d="M115,90 L125,100" stroke="#3E2723" strokeWidth="3" />
+                    <path d="M115,100 L125,90" stroke="#3E2723" strokeWidth="3" />
+
+                    {/* Thermometer in mouth */}
+                    <rect x="100" y="105" width="30" height="8" rx="4" fill="#E0F7FA" stroke="#3E2723" strokeWidth="1" transform="rotate(10 100 105)" />
+
+                    {/* Ice Pack */}
+                    <rect x="70" y="40" width="60" height="25" rx="5" fill="#81D4FA" stroke="#0288D1" strokeWidth="2" />
+                </StickerCatBase>
+            ),
+            Doubt: () => (
+                <StickerCatBase>
+                    {/* One eye smaller/squinting */}
+                    <AnimeEye cx={80} cy={95} rx={10} ry={12} />
+                    <path d="M115,95 H125" stroke="#3E2723" strokeWidth="3" />
+
+                    {/* Mouth to side */}
+                    <path d="M95,110 L105,108" stroke="#3E2723" strokeWidth="2" strokeLinecap="round" />
+
+                    {/* Question Mark */}
+                    <text x="140" y="80" fontFamily="Fredoka" fontSize="50" fill="#3E2723">?</text>
+
+                    {/* Hand on chin */}
+                    <ellipse cx="100" cy="120" rx="8" ry="8" fill="#FFFFFF" stroke="#3E2723" strokeWidth="3" />
+                </StickerCatBase>
+            ),
+            Back: () => (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15 19l-7-7 7-7" />
+                </svg>
+            )
+        };
+
+        // ==================== DATA ====================
+        const contentData = {
+            sad: {
+                title: "It's okay to cry",
+                color: "bg-pastel-pink",
+                icon: <Icons.Sad />,
+                messages: [
+                    "I'm deeply sorry you're feeling this way. I wish I could just hold you right now.",
+                    "Take a deep breath. You are so strong, but you don't always have to be.",
+                    "This feeling is temporary. My love for you is permanent.",
+                    "It's just a bad day, not a bad life. You are loved.",
+                    "Sending you a million kisses to wipe away the tears."
+                ]
+            },
+            tired: {
+                title: "Rest, my love",
+                color: "bg-pastel-peach",
+                icon: <Icons.Tired />,
+                messages: [
+                    "You've done enough today. Close your eyes and drift away.",
+                    "The world can wait. Your peace comes first.",
+                    "I'm so proud of how hard you work. Now let yourself rest.",
+                    "Nap time isn't lazy, it's necessary! 😴",
+                    "Permisson to do absolutely nothing: GRANTED."
+                ]
+            },
+            miss: {
+                title: "I miss you too",
+                color: "bg-pastel-blue",
+                icon: <Icons.Miss />,
+                messages: [
+                    "Distance means so little when someone means so much.",
+                    "Look at the moon. I'm looking at it too.",
+                    "I am counting down the seconds until I can see you again.",
+                    "If I had a flower for every time I thought of you, I could walk through my garden forever.",
+                    "You are my favorite notification."
+                ]
+            },
+            bored: {
+                title: "Let's have fun!",
+                color: "bg-pastel-purple",
+                icon: <Icons.Bored />,
+                messages: [
+                    "Challenge: Find the silliest selfie you have and send it to me!",
+                    "Did you know? Penguins propose with pebbles. 🐧",
+                    "Close your eyes and imagine our dream house. What does it look like?",
+                    "Quick! Name 3 things you're grateful for right now.",
+                    "If we were a TV show, what genre would we be?"
+                ]
+            },
+            anxious: {
+                title: "Breathe with me",
+                color: "bg-pastel-green",
+                icon: <Icons.Anxious />,
+                messages: [
+                    "Inhale... 1, 2, 3, 4. Exhale... 1, 2, 3, 4. You're safe.",
+                    "This anxiety is lying to you. You are capable and loved.",
+                    "Focus on your feet on the ground. You are here, right now.",
+                    "I am with you. We will get through this moment together.",
+                    "You've survived 100% of your bad days so far."
+                ]
+            },
+            angry: {
+                title: "Let it out",
+                color: "bg-pastel-orange",
+                icon: <Icons.Angry />,
+                messages: [
+                    "It's okay to be mad. Your feelings are valid.",
+                    "Scream into a pillow if you need to! I'm listening.",
+                    "Take a moment. Don't let the anger consume your beautiful heart.",
+                    "Vent to me. I'm on your team, always.",
+                    "Imagine the anger is a red balloon, and just let it go."
+                ]
+            },
+            sick: {
+                title: "Feel better soon",
+                color: "bg-pastel-teal",
+                icon: <Icons.Sick />,
+                messages: [
+                    "Sending you virtual chicken soup and cuddles.",
+                    "Your only job today is to heal. Everything else can wait.",
+                    "I wish I could be there to take care of you.",
+                    "Drink water, stay warm, and know I love you.",
+                    "Being sick implies you have a human body, which is cute."
+                ]
+            },
+            doubt: {
+                title: "Believe in yourself",
+                color: "bg-pastel-lavender",
+                icon: <Icons.Doubt />,
+                messages: [
+                    "You are capable of amazing things.",
+                    "I believe in you enough for the both of us.",
+                    "Don't let doubt dim your shine. You are a star.",
+                    "Remember how far you've come. You're doing great.",
+                    "You are enough. Exactly as you are."
+                ]
+            },
+            smile: {
+                title: "You are sunshine",
+                color: "bg-pastel-yellow",
+                icon: <Icons.Smile />,
+                messages: [
+                    "Your smile is my absolute favorite thing in the universe.",
+                    "You make everything better just by being you.",
+                    "I love you more than pizza. And that's a lot.",
+                    "You are the most beautiful person I know, inside and out.",
+                    "Just a reminder: You are my happy place."
+                ]
+            }
+        };
+
+        // ==================== COMPONENTS ====================
+
+        const CloudFooter = () => (
+            <div className="fixed bottom-0 w-full z-0 pointer-events-none text-white opacity-90">
+                <svg viewBox="0 0 1440 320" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto block translate-y-1">
+                    <path fill="currentColor" fillOpacity="1" d="M0,192L48,197.3C96,203,192,213,288,229.3C384,245,480,267,576,250.7C672,235,768,181,864,181.3C960,181,1056,235,1152,234.7C1248,235,1344,181,1392,154.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+                </svg>
+            </div>
+        );
+
+        const MenuButton = ({ item, onClick, emotion, delay }) => (
+            <button
+                onClick={() => onClick(emotion)}
+                className={`
+                    relative w-full aspect-square rounded-3xl 
+                    ${item.color} shadow-button btn-press 
+                    flex flex-col items-center justify-center gap-2 p-2 md:p-4
+                    animate-up overflow-visible hover:overflow-visible z-10 hover:z-50
+                `}
+                style={{ animationDelay: `${delay}ms` }}
+            >
+                {/* Decor Dots */}
+                <div className="absolute top-2 left-2 w-1.5 h-1.5 rounded-full bg-white/60"></div>
+                <div className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-white/60"></div>
+
+                <div className="w-24 h-24 md:w-28 md:h-28 transform hover:scale-110 transition-transform duration-300 drop-shadow-sm -mt-2">
+                    {item.icon}
+                </div>
+                <span className="font-cute text-text-primary text-xs md:text-sm font-semibold leading-tight text-center bg-white/60 px-2 py-1 rounded-full backdrop-blur-sm w-full truncate border border-white/40 -mt-2">
+                    {emotion.charAt(0).toUpperCase() + emotion.slice(1)}
+                </span>
+            </button>
+        );
+
+        const ContentScreen = ({ type, onClose }) => {
+            const data = contentData[type];
+            const [message, setMessage] = useState("");
+
+            useEffect(() => {
+                pickRandomMessage();
+            }, [type]);
+
+            const pickRandomMessage = () => {
+                const msgs = data.messages;
+                let newMsg;
+                do {
+                    newMsg = msgs[Math.floor(Math.random() * msgs.length)];
+                } while (newMsg === message && msgs.length > 1);
+                setMessage(newMsg);
+            };
+
+            return (
+                <div className="fixed inset-0 z-50 bg-bg-start flex flex-col slide-up overflow-hidden">
+                    {/* Header */}
+                    <div className="p-6 flex items-center">
+                        <button
+                            onClick={onClose}
+                            className="bg-white/80 p-2 rounded-full shadow-sm hover:bg-white transition-colors z-20"
+                        >
+                            <Icons.Back />
+                        </button>
+                    </div>
+
+                    {/* Main Content */}
+                    <div className="flex-1 flex flex-col items-center px-8 pt-4 pb-32 text-center relative z-10 overflow-y-auto no-scrollbar">
+
+                        {/* Hero Icon */}
+                        <div className={`
+                            w-56 h-56 rounded-full ${data.color} 
+                            flex items-center justify-center shadow-soft mb-8
+                            animate-[bounceSoft_3s_infinite_ease-in-out] p-4
+                            border-8 border-white
+                        `}>
+                            <div className="w-full h-full transform scale-110">
+                                {data.icon}
+                            </div>
+                        </div>
+
+                        {/* Title */}
+                        <h2 className="font-title text-4xl text-text-primary mb-6">
+                            {data.title}
+                        </h2>
+
+                        {/* Message Card */}
+                        <div className="bg-white/80 backdrop-blur-md p-8 rounded-3xl shadow-sm w-full max-w-md mx-auto mb-8 relative">
+                            <span className="absolute top-4 left-4 text-4xl text-pastel-orange opacity-40 font-title">"</span>
+                            <span className="absolute bottom-4 right-4 text-4xl text-pastel-orange opacity-40 font-title">"</span>
+                            <p className="font-body text-xl leading-relaxed text-text-primary">
+                                {message}
+                            </p>
+                        </div>
+
+                        {/* Action Button */}
+                        <button
+                            onClick={pickRandomMessage}
+                            className={`
+                                w-full max-w-xs py-4 rounded-2xl ${data.color} 
+                                font-cute font-bold text-text-primary shadow-button btn-press 
+                                flex items-center justify-center gap-2 border-2 border-white/50
+                            `}
+                        >
+                            <span className="text-xl">✨</span> New Message
+                        </button>
+                    </div>
+
+                    {/* Decorative Footer */}
+                    <div className={`fixed bottom-0 w-full h-32 ${data.color} opacity-30 rounded-t-[100%] scale-x-150`}></div>
+                    <div className={`fixed bottom-[-20px] w-full h-32 ${data.color} opacity-40 rounded-t-[100%] scale-x-125`}></div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [view, setView] = useState("menu");
+            const [secretCount, setSecretCount] = useState(0);
+
+            const handleTitleClick = () => {
+                if (secretCount + 1 >= 5) {
+                    alert("💖 Secret Found! You are my favorite person in the whole universe! 💖");
+                    setSecretCount(0);
+                } else {
+                    setSecretCount(s => s + 1);
+                }
+            };
+
+            return (
+                <div className="min-h-screen relative overflow-hidden pb-8">
+                    {/* Background Elements */}
+                    <div className="fixed top-10 left-10 text-2xl opacity-40 float">☁️</div>
+                    <div className="fixed top-12 left-[12px] w-3 h-3 bg-pastel-yellow rounded-full opacity-60"></div>
+                    <div className="fixed top-40 right-8 text-3xl opacity-30 float float-delay-1">✨</div>
+                    <div className="fixed bottom-32 left-8 text-2xl opacity-30 float float-delay-2">🦢</div>
+
+                    {view === "menu" ? (
+                        <div className="relative z-10 max-w-md mx-auto min-h-screen flex flex-col px-6 py-6">
+
+                            {/* Header */}
+                            <header className="text-center mt-2 mb-6">
+                                <div className="w-24 h-24 mx-auto mb-2 bg-white rounded-full flex items-center justify-center shadow-soft p-3 border-4 border-white">
+                                    <Icons.Main />
+                                </div>
+                                <h1
+                                    onClick={handleTitleClick}
+                                    className="font-title text-4xl text-text-primary drop-shadow-sm cursor-pointer select-none"
+                                >
+                                    Virtual Care<br />Package
+                                </h1>
+                            </header>
+
+                            {/* 4x2 Grid (8 items) */}
+                            <div className="grid grid-cols-2 gap-4 mb-24">
+                                <MenuButton item={contentData.sad} emotion="sad" onClick={setView} delay={50} />
+                                <MenuButton item={contentData.tired} emotion="tired" onClick={setView} delay={100} />
+                                <MenuButton item={contentData.miss} emotion="miss" onClick={setView} delay={150} />
+                                <MenuButton item={contentData.anxious} emotion="anxious" onClick={setView} delay={200} />
+                                <MenuButton item={contentData.angry} emotion="angry" onClick={setView} delay={250} />
+                                <MenuButton item={contentData.sick} emotion="sick" onClick={setView} delay={300} />
+                                <MenuButton item={contentData.doubt} emotion="doubt" onClick={setView} delay={350} />
+                                <MenuButton item={contentData.bored} emotion="bored" onClick={setView} delay={400} />
+                            </div>
+
+                            {/* Bottom Fixed Button */}
+                            <div className="fixed bottom-0 left-0 w-full p-6 z-20">
+                                <button
+                                    onClick={() => setView('smile')}
+                                    className="w-full max-w-md mx-auto bg-pastel-yellow rounded-3xl p-4 shadow-button btn-press flex items-center justify-between px-6 animate-up opacity-95 hover:opacity-100 transition-opacity border-2 border-white"
+                                    style={{ animationDelay: '500ms' }}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-12 h-12 flex items-center justify-center transform scale-75">
+                                            <Icons.Smile />
+                                        </div>
+                                        <div className="text-left">
+                                            <span className="font-cute font-bold text-base text-text-primary block">Open when you</span>
+                                            <span className="font-cute text-text-primary/70 text-sm">need a smile</span>
+                                        </div>
+                                    </div>
+                                    <div className="bg-white/40 p-2 rounded-full">
+                                        <svg className="w-5 h-5 text-text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <ContentScreen type={view} onClose={() => setView("menu")} />
+                    )}
+
+                    {/* Cloud Decoration behind everything */}
+                    <CloudFooter />
+                </div>
+            );
+        };
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+
+</html>
